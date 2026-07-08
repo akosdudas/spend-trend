@@ -1,0 +1,6 @@
+﻿Booking date;Amount;Sender;Recipient;Name;Title;Message;Reference number;Balance;Currency;
+2025/01/10;-5000,00;FI21 1234 5600 0007 85;;Sample Fund A;Sample Fund A;MERKINTÄ   Sample Fund A KPL               34,4162 KURSSI          203,39280 PALKKIO              0,00;;1234,56;EUR;
+2025/01/12;9932,09;;FI21 1234 5600 0007 85;SAMPLEBANK;SAMPLEBANK;TOIMEKSIANTO           OES000000001 KAUPPAPÄIVÄ            10.01.2025 X MSCI WORLD INFO TECH 1C ISIN                 IE00BM67HT60 MÄÄRÄ                           100 KAUPPAHINTA          9.950,00 EUR VÄLITYSPALKKIO            17,91 EUR;;11123,45;EUR;
+2025/01/15;15633,28;;FI21 1234 5600 0007 85;;Unit trust;LUNASTUS   JPMorgan Euro Corporate KPL              945,1800 KURSSI           16,54000 PALKKIO              0,00;;20123,45;EUR;
+2025/01/20;-4239,20;FI21 1234 5600 0007 85;;SAMPLEBANK;SAMPLEBANK;TOIMEKSIANTO           OES000000002 KAUPPAPÄIVÄ            18.01.2025 X PH GOLD ETC EUR HDG ISIN                 DE000A1EK0G3 MÄÄRÄ                            15 KAUPPAHINTA          4.231,20 EUR VÄLITYSPALKKIO             8,00 EUR;;5123,45;EUR;
+2025/01/23;10000,00;;FI21 1234 5600 0007 85;John Doe;John Doe;transfer between own accounts for investment;;10123,45;EUR;

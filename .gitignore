@@ -1,0 +1,19 @@
+# --- Personal finance config & data ---
+# The real config/ and data/ live in an EXTERNAL data home outside this repo
+# (see specs/08-tech-stack.md). These entries are a safety net in case a data
+# home is ever pointed inside the repo working tree — real data must never be
+# committed, whether the repo is public or private.
+/config/
+/data/
+*.local
+.env
+.env.*
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# --- OS ---
+.DS_Store

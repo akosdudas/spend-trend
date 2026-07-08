@@ -1,0 +1,7 @@
+Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance
+Card Payment,Current,2026-01-01 02:37:50,2026-01-01 14:30:53,Sample Merchant,-2.51,0.00,EUR,COMPLETED,6.99
+Topup,Current,2026-01-11 08:31:27,2026-01-11 08:31:28,Payment from JOHN DOE,1000.00,0.00,EUR,COMPLETED,1006.99
+Exchange,Current,2026-01-12 11:20:12,2026-01-12 11:20:12,Exchanged to USD,-1000.00,0.00,EUR,COMPLETED,6.99
+Exchange,Current,2026-01-12 11:20:12,2026-01-12 11:20:12,Exchanged to USD,1167.00,0.00,USD,COMPLETED,1202.08
+Transfer,Current,2026-01-28 06:46:25,2026-01-28 06:46:25,Transfer from JANE DOE,1246.89,0.00,USD,COMPLETED,2446.44
+Card Payment,Current,2026-04-14 19:27:19,2026-04-15 16:04:50,Sample Merchant,-3000.00,0.00,HUF,COMPLETED,26064.99
