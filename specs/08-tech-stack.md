@@ -44,6 +44,13 @@ recency:
   enough to be widely used, not `.0` of the newest major.
 - Upgrade only deliberately, with a smoke test; a pinned set runs offline for years.
 
+Dev-only tooling (`requirements-dev.txt`, never imported by the app itself): `pytest` for unit
+tests, `ruff` for linting/formatting, `mypy` for type checking. A `Makefile` wraps them
+(`make test`, `make lint`, `make typecheck`, `make check`). Unit tests cover deterministic logic
+with a stable contract — parsing (`src/importer`), categorization (`src/categorize`), and config
+round-trips (`src/storage`) — not the Streamlit UI or analysis aggregation, which change shape with
+the UX and are exercised by running the app instead.
+
 ## 4. Run
 
 A venv with the three deps and a double-click launcher (`run.command` on macOS) that starts
@@ -55,15 +62,17 @@ network, no auth.
 The repo holds only code, specs, and samples — no config or data.
 
 ```text
-spendtrends/
+src/
   __main__.py            # launcher: start Streamlit + open the window
   app.py                 # Streamlit UI (Dashboard, Analyze, Data, Profiles, Rules, Groups, …)
+  pages_ui/               # one module per screen, each a render(data_home) function
   storage/               # CSV/JSON load+save, safe-save, data-home resolution, year lifecycle
   domain/                # dataclasses
   importer/              # CSV parse per profile, currency parse
   categorize/            # substring rule engine
   analysis/              # aggregation, category→group fold-up, ratios
 specs/                   # incl. csv-samples/
+setup_data_home.py       # standalone script: scaffold a data home + write the pointer file
 .gitignore               # ignores /config, /data, .env, *.local
 requirements.txt
 run.command

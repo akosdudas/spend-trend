@@ -1,0 +1,92 @@
+"""Load/save the small hand-editable JSON config files. See specs/02-storage.md §2."""
+
+from __future__ import annotations
+
+import json
+from dataclasses import asdict
+from pathlib import Path
+
+from src.domain.models import BankProfile, CategoryRule
+from src.storage.io_utils import safe_write_text
+
+BANK_PROFILES_FILE = "bank-profiles.json"
+RULES_FILE = "rules.json"
+CATEGORY_GROUPS_FILE = "category-groups.json"
+SAVED_VIEWS_FILE = "saved-views.json"
+SETTINGS_FILE = "settings.json"
+
+
+def _config_dir(data_home: Path) -> Path:
+    return Path(data_home) / "config"
+
+
+def _read_json(data_home: Path, filename: str, default):
+    path = _config_dir(data_home) / filename
+    if not path.exists():
+        return default
+    with path.open(encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _write_json(data_home: Path, filename: str, value) -> None:
+    path = _config_dir(data_home) / filename
+    safe_write_text(path, json.dumps(value, indent=2) + "\n")
+
+
+# --- bank profiles ---------------------------------------------------------
+
+
+def load_bank_profiles(data_home: Path) -> dict[str, BankProfile]:
+    raw = _read_json(data_home, BANK_PROFILES_FILE, [])
+    return {p["name"]: BankProfile(**p) for p in raw}
+
+
+def save_bank_profiles(data_home: Path, profiles: dict[str, BankProfile]) -> None:
+    _write_json(data_home, BANK_PROFILES_FILE, [asdict(p) for p in profiles.values()])
+
+
+# --- rules ------------------------------------------------------------------
+
+
+def load_rules(data_home: Path) -> list[CategoryRule]:
+    raw = _read_json(data_home, RULES_FILE, [])
+    return [CategoryRule(**r) for r in raw]
+
+
+def save_rules(data_home: Path, rules: list[CategoryRule]) -> None:
+    _write_json(data_home, RULES_FILE, [asdict(r) for r in rules])
+
+
+# --- category -> group map ---------------------------------------------------
+
+
+def load_category_groups(data_home: Path) -> dict[str, str]:
+    raw = _read_json(data_home, CATEGORY_GROUPS_FILE, [])
+    return {row["category"]: row["group"] for row in raw}
+
+
+def save_category_groups(data_home: Path, mapping: dict[str, str]) -> None:
+    rows = [{"category": category, "group": group} for category, group in mapping.items()]
+    _write_json(data_home, CATEGORY_GROUPS_FILE, rows)
+
+
+# --- saved views --------------------------------------------------------------
+
+
+def load_saved_views(data_home: Path) -> list[dict]:
+    return _read_json(data_home, SAVED_VIEWS_FILE, [])
+
+
+def save_saved_views(data_home: Path, views: list[dict]) -> None:
+    _write_json(data_home, SAVED_VIEWS_FILE, views)
+
+
+# --- settings -----------------------------------------------------------------
+
+
+def load_settings(data_home: Path) -> dict:
+    return _read_json(data_home, SETTINGS_FILE, {})
+
+
+def save_settings(data_home: Path, settings: dict) -> None:
+    _write_json(data_home, SETTINGS_FILE, settings)
