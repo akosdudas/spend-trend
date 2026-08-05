@@ -10,8 +10,21 @@ st.set_page_config(page_title="spend-trends", layout="wide")
 
 resolve_data_home()  # fail fast with a clear message if no data home is configured
 
-with st.sidebar:
-    st.title("spend-trends")
+# Streamlit has no Python-level option for these, so they're forced via CSS:
+# - the sidebar's built-in nav clamps its height and hides overflow pages behind a "View
+#   more"/"View less" toggle (data-testid stSidebarNavViewButton) once there are enough pages —
+#   always show the full list instead.
+# - narrow the sidebar to roughly half its default width.
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebarNavItems"] { max-height: none !important; }
+    [data-testid="stSidebarNavViewButton"] { display: none !important; }
+    [data-testid="stSidebar"] { width: 168px !important; min-width: 168px !important; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 pages = [
     st.Page("pages_ui/page_dashboard.py", title="Dashboard", icon="📊", default=True),
