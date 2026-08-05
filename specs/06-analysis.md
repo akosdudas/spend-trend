@@ -26,22 +26,24 @@ question — there is no chart-click drill-down.
 
 ## 2. Saved views & dashboard
 
-- A saved view is a small JSON config (the four choices) plus a **`width`** (`quarter` | `half` |
- `full`).
-- The dashboard renders saved views **in list order** in a flow grid: each at its width,
- left-to-right, wrapping top-to-bottom (CSS only; charts size to their cell). Reorder via up/down
- or by editing `saved-views.json`.
-- Pre-seeded starter views (editable like any other):
- - **Current-year summary** — a table of expense categories/groups and income categories with
- sums, plus **total expenditure, total income, net savings, savings rate**; toggle category ↔
- group granularity; switch year.
- - Year-over-year by group.
- - Spend vs income by year, with net and savings rate — the **trend** view.
- - Group share of spend (the headline percentages).
- - Monthly spend by group (current year).
- - This month vs same month last year.
- - Top merchants (month / year).
- - Uncategorized / needs-attention queue.
+A saved view is a small JSON entry in `saved-views.json`: `name`, `width`
+(`quarter`/`half`/`full`), `chart` (`table`/`bar`/`stacked_bar`/`line`/`pie`), `groupBy` (a list
+of dimensions), `measure` (`sum` or a ratio from §5.1), and `filters` (year/type/currency/… — a
+`year` of `"current"` means the open year).
+
+The dashboard renders saved views **in list order** in a flow grid: each at its width,
+left-to-right, wrapping top-to-bottom (CSS only; charts size to their cell). Reorder via up/down
+or by editing `saved-views.json`.
+
+Pre-seeded starter views (editable like any other):
+
+- **Current-year summary** — a table of expense categories/groups and income categories with
+  sums, plus **total expenditure, total income, net savings, savings rate**; toggle category ↔
+  group granularity; switch year.
+- Spend vs income by year, and savings rate by year — the **trend** views.
+- Spending by group this year (share) and monthly spending by group.
+- Top merchants this year.
+- Needs attention (uncategorized).
 
 ## 3. Comparisons
 

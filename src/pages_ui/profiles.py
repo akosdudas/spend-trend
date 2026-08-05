@@ -24,7 +24,9 @@ def render(data_home) -> None:
     if st.button("Save profiles"):
         try:
             raw = json.loads(edited_text)
-            new_profiles = {p["name"]: BankProfile(**p) for p in raw}
+            new_profiles = {
+                p["name"]: BankProfile(**config_store.validated_bank_profile_fields(p)) for p in raw
+            }
         except Exception as exc:  # noqa: BLE001 - surfaced to the user, not a programming error
             st.error(f"Invalid profiles JSON: {exc}")
         else:

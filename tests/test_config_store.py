@@ -1,3 +1,5 @@
+import pytest
+
 from src.domain.models import BankProfile, CategoryRule
 from src.storage import config_store
 
@@ -9,15 +11,11 @@ def test_bank_profile_round_trips_through_json(tmp_path):
         name="Bank A",
         defaultCurrency="EUR",
         currencyColumn=None,
-        encoding="utf-8-sig",
         delimiter=";",
-        hasHeader=True,
-        skipRows=0,
         dateColumn="EntryDate",
         dateFormat="%Y-%m-%d",
-        amountMapping={"amountColumn": "Amount EUR"},
-        amountConvention="signed_expense_negative",
-        numberFormat="eu",
+        amountColumn="Amount EUR",
+        decimalSeparator=",",
         descriptionColumns=["Description", "Recipient/Payer"],
     )
 
@@ -54,34 +52,81 @@ def test_category_groups_round_trip_as_category_to_group_map(tmp_path):
     assert loaded == mapping
 
 
+def _write_bank_profiles_json(tmp_path, text: str) -> None:
+    (tmp_path / "config").mkdir(parents=True)
+    (tmp_path / "config" / "bank-profiles.json").write_text(text)
+
+
 def test_bank_profiles_ignore_underscore_prefixed_comment_keys(tmp_path):
     """Hand-edited JSON may annotate an entry with e.g. "_comment" (specs/03-import-and-profiles.md)."""
-    (tmp_path / "config").mkdir(parents=True)
-    (tmp_path / "config" / "bank-profiles.json").write_text(
+    _write_bank_profiles_json(
+        tmp_path,
         """
         [
           {
             "_comment": "my bank's export format",
             "name": "Bank A",
             "defaultCurrency": "EUR",
-            "encoding": "utf-8-sig",
             "delimiter": ";",
-            "hasHeader": true,
-            "skipRows": 0,
             "dateColumn": "EntryDate",
             "dateFormat": "%Y-%m-%d",
-            "amountMapping": {"amountColumn": "Amount EUR"},
-            "amountConvention": "signed_expense_negative",
-            "numberFormat": "eu",
+            "amountColumn": "Amount EUR",
+            "decimalSeparator": ",",
             "descriptionColumns": ["Description"]
           }
         ]
-        """
+        """,
     )
 
     loaded = config_store.load_bank_profiles(tmp_path)
 
     assert loaded["Bank A"].name == "Bank A"
+
+
+def test_bank_profiles_reject_unknown_field(tmp_path):
+    """Removed fields (e.g. the old numberFormat enum) must fail clearly, not be silently accepted."""
+    _write_bank_profiles_json(
+        tmp_path,
+        """
+        [
+          {
+            "name": "Bank A",
+            "defaultCurrency": "EUR",
+            "delimiter": ";",
+            "dateColumn": "EntryDate",
+            "dateFormat": "%Y-%m-%d",
+            "amountColumn": "Amount EUR",
+            "decimalSeparator": ",",
+            "descriptionColumns": ["Description"],
+            "numberFormat": "eu"
+          }
+        ]
+        """,
+    )
+
+    with pytest.raises(ValueError, match="unknown field"):
+        config_store.load_bank_profiles(tmp_path)
+
+
+def test_bank_profiles_reject_missing_required_field(tmp_path):
+    _write_bank_profiles_json(
+        tmp_path,
+        """
+        [
+          {
+            "name": "Bank A",
+            "defaultCurrency": "EUR",
+            "delimiter": ";",
+            "dateColumn": "EntryDate",
+            "dateFormat": "%Y-%m-%d",
+            "decimalSeparator": ","
+          }
+        ]
+        """,
+    )
+
+    with pytest.raises(ValueError, match="missing required field"):
+        config_store.load_bank_profiles(tmp_path)
 
 
 def test_rules_ignore_underscore_prefixed_comment_keys(tmp_path):

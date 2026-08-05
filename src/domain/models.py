@@ -33,15 +33,11 @@ class CategoryRule:
 class BankProfile:
     name: str
     defaultCurrency: str
-    encoding: str
     delimiter: str
-    hasHeader: bool
-    skipRows: int
     dateColumn: str
     dateFormat: str
-    amountMapping: dict
-    amountConvention: Literal["signed_expense_negative", "signed_expense_positive", "debit_credit"]
-    numberFormat: Literal["us", "eu", "eu_space", "plain"]
+    amountColumn: str
+    decimalSeparator: Literal[",", "."]
     descriptionColumns: list[str] = field(default_factory=list)
     currencyColumn: str | None = None
 

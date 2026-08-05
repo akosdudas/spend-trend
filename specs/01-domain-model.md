@@ -97,15 +97,15 @@ How to parse one bank's CSV format, including how to determine currency. Editabl
 | `name` | string | Human label |
 | `defaultCurrency` | string | ISO code used when no `currencyColumn` |
 | `currencyColumn` | string? | Optional source column giving per-row currency |
-| `encoding` | string | e.g. `utf-8`, `utf-8-sig` (BOM) |
 | `delimiter` | string | field delimiter |
-| `hasHeader` | bool | whether a header row is present |
-| `skipRows` | int | preamble lines before the header |
 | `dateColumn` / `dateFormat` | string | source column + `strftime` format (datetime truncated to day) |
-| `amountMapping` | object | a single signed column, or separate debit/credit columns |
-| `amountConvention` | enum | how sign maps to spend vs. income |
-| `numberFormat` | enum | decimal/thousands separators |
+| `amountColumn` | string | the **signed** amount column (negative = expense) |
+| `decimalSeparator` | string | the amount's decimal character, `","` or `"."` (all other non-digit/sign characters are stripped) |
 | `descriptionColumns` | string[] | columns concatenated into `rawDescription` |
+
+Files are always read as UTF-8; a byte-order mark, if present, is stripped automatically (no
+`encoding` field). A **header row is required** (columns are referenced by name), so there is no
+`hasHeader`/`skipRows`. Sign meaning is fixed (negative = expense), not a configured convention.
 
 ### 2.6 HistoricalSummary
 
@@ -133,7 +133,7 @@ period field; it aggregates by date like everything else. It comes primarily fro
 - A transaction's `currency` comes from the profile's `currencyColumn` when present, else the
   profile's `defaultCurrency`. It is not globally fixed.
 - The **amount is validated on parse**: a value that doesn't parse under the profile's
-  `numberFormat` is **reported and skipped** in review, never silently accepted
+  `decimalSeparator` is **reported and skipped** in review, never silently accepted
   (`03-import-and-profiles.md`). There is no allowed-currency list; the row's currency is whatever
   the column or default gives.
 - The app never auto-converts. A foreign-currency row is **rewritten in review** — overwrite its

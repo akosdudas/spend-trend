@@ -24,33 +24,25 @@ Column names are always the exact header strings from the CSV.
 | `name` | Human label |
 | `defaultCurrency` | ISO code used when `currencyColumn` is absent |
 | `currencyColumn` | Optional source column giving per-row currency |
-| `encoding` | Python codec: `utf-8`, `utf-8-sig` (strips a BOM), `latin-1`/`cp1252` (legacy) |
 | `delimiter` | One char: `,` `;` `\t` |
-| `hasHeader` | `true` if the first non-skipped row is column names |
-| `skipRows` | Preamble lines before the header row |
 | `dateColumn` / `dateFormat` | Source date column + `strftime` format; datetime is truncated to the day. If several date columns exist, pick one |
-| `amountMapping` | `{ "amountColumn": "Amount" }` or `{ "debitColumn": "...", "creditColumn": "..." }` |
-| `amountConvention` | How sign maps to spend vs income (below) |
-| `numberFormat` | Decimal/thousands punctuation of the amount (below) |
+| `amountColumn` | The signed amount column, **negative = expense** (name it directly, e.g. `"Amount"`) |
+| `decimalSeparator` | The amount's decimal character, `","` or `"."` (below) |
 | `descriptionColumns` | Ordered headers joined into `rawDescription`; put the readable type/label column first, then the payee; omit noisy columns |
+
+Files are read as UTF-8; a byte-order mark, if present, is stripped automatically. A header row is
+required (columns are referenced by name), so there is no `encoding`, `skipRows`, or `hasHeader`
+field.
 
 **`dateFormat`** — `strftime` pattern. Tokens: `%Y` 4-digit year · `%y` 2-digit · `%m` month ·
 `%d` day · `%H:%M:%S` time. Examples: `%Y-%m-%d` (`2026-01-02`), `%Y/%m/%d` (`2026/01/23`),
 `%Y-%m-%d %H:%M:%S` (datetime), `%d.%m.%Y`, `%m/%d/%Y`.
 
-**`numberFormat`** — punctuation of the amount column (thousands separator optional):
-
-| Value | Decimal | Thousands | Example |
-|-------|---------|-----------|---------|
-| `us` | `.` | `,` | `1,234.56` |
-| `eu` | `,` | `.` | `1.234,56` / `5480,34` |
-| `eu_space` | `,` | space | `1 234,56` |
-| `plain` | `.` | none | `1234.56` |
-
-**`amountConvention`** — `signed_expense_negative` (single signed column; negative = expense,
-positive = income), `signed_expense_positive` (positive = expense), or `debit_credit` (with
-`debitColumn`/`creditColumn`; debit = outflow, credit = inflow). The per-row `type` default
-follows: outflow → `expense`, inflow → `income` (overridable in review).
+**`decimalSeparator`** — the amount column's decimal character: `","` (e.g. `1.234,56`,
+`5480,34`) or `"."` (e.g. `1,234.56`, `1234.56`). Parsing keeps digits, the sign, and this
+character and strips everything else (thousands separators, spaces, currency symbols, a leading
+`+`), then reads it as a number. **Sign meaning is fixed** — negative is an expense, positive
+income — so nothing to configure; the per-row `type` default follows (overridable in review).
 
 **`descriptionColumns`** — concatenated (space-joined) into `rawDescription`; type-label first so
 rules can match the *nature* of a row (e.g. a `Type`/`Description` column). Examples:
@@ -66,16 +58,18 @@ rules can match the *nature* of a row (e.g. a `Type`/`Description` column). Exam
 Three desensitized exports in `specs/csv-samples/` (`bank-a.csv`, `bank-b.csv`, `bank-c.csv`)
 exercise the parser. They carry no personal data and use generic bank names.
 
-| Sample | Delimiter | Encoding | Numbers | Date | Currency | Type-label column |
-|--------|-----------|----------|---------|------|----------|-------------------|
-| Bank A | `;` | `utf-8-sig` | `eu` | `%Y-%m-%d` | default EUR | `Description` |
-| Bank B | `;` | `utf-8-sig` | `eu` | `%Y/%m/%d` | `Currency` col | (none — `Message`/`Name`) |
-| Bank C | `,` | `utf-8` | `plain` | `%Y-%m-%d %H:%M:%S` | `Currency` col (mixed) | `Type` |
+| Sample | Delimiter | Decimal | Date | Currency | Type-label column |
+|--------|-----------|---------|------|----------|-------------------|
+| Bank A | `;` | `,` | `%Y-%m-%d` | default EUR | `Description` |
+| Bank B | `;` | `,` | `%Y/%m/%d` | `Currency` col | (none — `Message`/`Name`) |
+| Bank C | `,` | `.` | `%Y-%m-%d %H:%M:%S` | `Currency` col (mixed) | `Type` |
 
-Parser requirements these exercise: BOM (`utf-8-sig`); several date columns / datetime (pick one,
-truncate to day); trailing empty column and other unused columns (ignored); a mixed-currency
-`Currency` column; and the type-label folded into `rawDescription` so rules can match `salary`,
-`exchange`, etc.
+Parser requirements these exercise: a BOM (stripped automatically); several date columns /
+datetime (pick one, truncate to day); trailing empty column and other unused columns (ignored); a
+mixed-currency `Currency` column; and the type-label folded into `rawDescription` so rules can
+match `salary`, `exchange`, etc. Real profiles may add per-cell quirks (e.g. an explicit leading
+`+` on positive amounts, empty fields written as `-`, single-quoted free-text) — normalized on
+parse and noted in that profile's own entry.
 
 ## 2. Import
 
@@ -84,9 +78,9 @@ batch. Imported rows appear as **staged rows in memory** on the same grid as rec
 rows and are committed by appending.
 
 1. **Add files** — one or more CSVs, each with a manually-selected profile (no auto-detection).
-2. **Parse + normalize** — per profile: signed `amount` (validated against `numberFormat`), `date`
+2. **Parse + normalize** — per profile: signed `amount` (parsed via `decimalSeparator`), `date`
  (day only), assembled `rawDescription`, per-row `currency`, and a default `type` from the
- amount sign. A row whose number fails to parse is **skipped and reported** in review, never
+ amount sign. A row whose amount fails to parse is **skipped and reported** in review, never
  silently accepted.
 3. **Auto-categorize** — run rules (`04`): set `type` + `category`, or pre-mark `type=skip`.
 4. **Review inline** — edit `category`/`type`, touch up `amount`, add `notes`, delete a row,
@@ -119,10 +113,10 @@ the file re-sorts by date on save. The two rows are independent afterward (no pa
 
 ## 3. Amount & sign normalization
 
-The profile's `amountConvention` makes spend vs income unambiguous. Internally: spend negative,
-income positive; the per-row `type` default follows the sign, overridable in review. Number
-parsing follows `numberFormat`: thousands separators stripped, decimal normalized, currency
-symbols and stray whitespace removed.
+The `amountColumn` is a **signed** number: **negative = expense, positive = income** (fixed, not
+configured); the per-row `type` default follows the sign, overridable in review. Number parsing
+keeps digits, the sign, and the profile's `decimalSeparator` and strips everything else (thousands
+separators, spaces, currency symbols, a leading `+`), then normalizes the decimal to a dot.
 
 ## 4. Income
 

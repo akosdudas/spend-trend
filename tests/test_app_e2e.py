@@ -46,15 +46,11 @@ def _seed_data_home(data_home) -> None:
             "Bank A": BankProfile(
                 name="Bank A",
                 defaultCurrency="EUR",
-                encoding="utf-8-sig",
                 delimiter=";",
-                hasHeader=True,
-                skipRows=0,
                 dateColumn="EntryDate",
                 dateFormat="%Y-%m-%d",
-                amountMapping={"amountColumn": "Amount EUR"},
-                amountConvention="signed_expense_negative",
-                numberFormat="eu",
+                amountColumn="Amount EUR",
+                decimalSeparator=",",
                 descriptionColumns=["Description"],
             )
         },
