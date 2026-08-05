@@ -41,12 +41,16 @@ seen in about the last year) and allows free typing.
 ### 2.2 Group — analytical fold-up (expense only)
 
 Groups are higher-level **expense** buckets used only for analysis, defined by a
-**`CategoryGroupMap`** (`config/category-groups.json`):
+**`CategoryGroupMap`** (`config/category-groups.json`), stored **group-first** for easy hand-editing
+— each key is a group, its value the list of expense categories that fold into it:
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `category` | string | An expense category value |
-| `group` | string | The bucket it folds into (e.g. Housing / Food / Car / Dog / Rest) |
+```json
+{
+  "Housing": ["rent", "utilities"],
+  "Food": ["groceries", "dining"],
+  "Car": ["fuel", "insurance"]
+}
+```
 
 - These are the headline percentage buckets for spending. **Income is not grouped** — income is
   analyzed by category (and by its `type` total), which is a short list.

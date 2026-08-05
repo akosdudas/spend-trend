@@ -83,7 +83,7 @@ STARTER_VIEWS = [
 
 DEFAULT_CONFIG_FILES: dict[str, list | dict] = {
     "bank-profiles.json": [],
-    "category-groups.json": [],
+    "category-groups.json": {},
     "rules.json": [],
     "saved-views.json": STARTER_VIEWS,
     "settings.json": {},

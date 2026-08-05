@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from src.domain.models import BankProfile, CategoryRule
@@ -44,12 +46,21 @@ def test_category_rule_with_no_category_round_trips(tmp_path):
 
 
 def test_category_groups_round_trip_as_category_to_group_map(tmp_path):
-    mapping = {"groceries": "Food", "rent": "Housing"}
+    mapping = {"groceries": "Food", "dining": "Food", "rent": "Housing"}
 
     config_store.save_category_groups(tmp_path, mapping)
     loaded = config_store.load_category_groups(tmp_path)
 
     assert loaded == mapping
+
+
+def test_category_groups_stored_group_first_on_disk(tmp_path):
+    """01-domain-model.md §2.2: group-first (group -> [category, ...]) for easy hand-editing."""
+    config_store.save_category_groups(tmp_path, {"groceries": "Food", "dining": "Food", "rent": "Housing"})
+
+    on_disk = json.loads((tmp_path / "config" / "category-groups.json").read_text())
+
+    assert on_disk == {"Food": ["dining", "groceries"], "Housing": ["rent"]}
 
 
 def _write_bank_profiles_json(tmp_path, text: str) -> None:
