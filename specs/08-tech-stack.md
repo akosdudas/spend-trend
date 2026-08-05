@@ -44,12 +44,22 @@ recency:
   enough to be widely used, not `.0` of the newest major.
 - Upgrade only deliberately, with a smoke test; a pinned set runs offline for years.
 
-Dev-only tooling (`requirements-dev.txt`, never imported by the app itself): `pytest` for unit
-tests, `ruff` for linting/formatting, `mypy` for type checking. A `Makefile` wraps them
-(`make test`, `make lint`, `make typecheck`, `make check`). Unit tests cover deterministic logic
-with a stable contract — parsing (`src/importer`), categorization (`src/categorize`), and config
-round-trips (`src/storage`) — not the Streamlit UI or analysis aggregation, which change shape with
-the UX and are exercised by running the app instead.
+Dev-only tooling (`requirements-dev.txt`, never imported by the app itself): `pytest` for tests,
+`ruff` for linting/formatting, `mypy` for type checking. A `Makefile` wraps them (`make test`,
+`make lint`, `make typecheck`, `make check`). Two kinds of test:
+
+- **Unit tests** cover deterministic logic with a stable contract — parsing (`src/importer`),
+  categorization (`src/categorize`), and config round-trips (`src/storage`) — not the Streamlit UI
+  or analysis aggregation, which change shape with the UX.
+- **Render-smoke tests** (`tests/test_app_e2e.py`) are the minimum bar for the UI layer: every
+  screen, and every `st.dialog` modal, must **mount without raising** — a crash on open is always a
+  bug. This is a mount check, not an interaction check: it does not click through every control on
+  every screen (that combinatorial surface is why unit tests exist on the underlying functions
+  instead). Each screen is tested via its own `AppTest.from_file()` of that page's script — `AppTest`
+  has no supported way to switch pages within one instance for a `st.navigation()` app. A dialog is
+  opened by finding and clicking its trigger button, then asserting no exception. New screens or
+  dialogs get the same one-line coverage; this bar is non-negotiable, unlike the deeper interaction
+  paths which stay in the "not required" bucket above.
 
 ## 4. Run
 
@@ -64,8 +74,9 @@ The repo holds only code, specs, and samples — no config or data.
 ```text
 src/
   __main__.py            # launcher: start Streamlit + open the window
-  app.py                 # Streamlit UI (Dashboard, Analyze, Data, Profiles, Rules, Groups, …)
-  pages_ui/               # one module per screen, each a render(data_home) function
+  app.py                 # Streamlit UI entrypoint: st.navigation over the pages below
+  pages_ui/               # one render(data_home) module per screen + a thin page_*.py script
+                          # per screen (st.Page file, so each is independently navigable/testable)
   storage/               # CSV/JSON load+save, safe-save, data-home resolution, year lifecycle
   domain/                # dataclasses
   importer/              # CSV parse per profile, currency parse

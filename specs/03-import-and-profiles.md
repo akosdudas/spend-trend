@@ -12,6 +12,9 @@ the first rows *as the app would normalize them* (parsed date, signed amount, cu
 description) so a profile can be verified before importing for real. (No in-app column-mapping
 form — a handful of profiles are set up once, and the JSON + reference is enough.)
 
+Any key starting with `_` (e.g. `_comment`) is ignored on load — a way to annotate a hand-edited
+entry without it being treated as a field. This applies to `bank-profiles.json` and `rules.json`.
+
 ### 1.1 Field reference
 
 Column names are always the exact header strings from the CSV.

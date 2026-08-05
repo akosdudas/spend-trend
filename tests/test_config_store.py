@@ -52,3 +52,48 @@ def test_category_groups_round_trip_as_category_to_group_map(tmp_path):
     loaded = config_store.load_category_groups(tmp_path)
 
     assert loaded == mapping
+
+
+def test_bank_profiles_ignore_underscore_prefixed_comment_keys(tmp_path):
+    """Hand-edited JSON may annotate an entry with e.g. "_comment" (specs/03-import-and-profiles.md)."""
+    (tmp_path / "config").mkdir(parents=True)
+    (tmp_path / "config" / "bank-profiles.json").write_text(
+        """
+        [
+          {
+            "_comment": "my bank's export format",
+            "name": "Bank A",
+            "defaultCurrency": "EUR",
+            "encoding": "utf-8-sig",
+            "delimiter": ";",
+            "hasHeader": true,
+            "skipRows": 0,
+            "dateColumn": "EntryDate",
+            "dateFormat": "%Y-%m-%d",
+            "amountMapping": {"amountColumn": "Amount EUR"},
+            "amountConvention": "signed_expense_negative",
+            "numberFormat": "eu",
+            "descriptionColumns": ["Description"]
+          }
+        ]
+        """
+    )
+
+    loaded = config_store.load_bank_profiles(tmp_path)
+
+    assert loaded["Bank A"].name == "Bank A"
+
+
+def test_rules_ignore_underscore_prefixed_comment_keys(tmp_path):
+    (tmp_path / "config").mkdir(parents=True)
+    (tmp_path / "config" / "rules.json").write_text(
+        """
+        [
+          {"_comment": "salary rule", "pattern": "salary", "type": "income", "category": "salary"}
+        ]
+        """
+    )
+
+    loaded = config_store.load_rules(tmp_path)
+
+    assert loaded == [CategoryRule(pattern="salary", type="income", category="salary")]

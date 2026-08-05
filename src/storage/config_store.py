@@ -33,12 +33,17 @@ def _write_json(data_home: Path, filename: str, value) -> None:
     safe_write_text(path, json.dumps(value, indent=2) + "\n")
 
 
+def _without_comment_keys(entry: dict) -> dict:
+    """Drop underscore-prefixed keys (e.g. "_comment") — a hand-editing convention, not a field."""
+    return {k: v for k, v in entry.items() if not k.startswith("_")}
+
+
 # --- bank profiles ---------------------------------------------------------
 
 
 def load_bank_profiles(data_home: Path) -> dict[str, BankProfile]:
     raw = _read_json(data_home, BANK_PROFILES_FILE, [])
-    return {p["name"]: BankProfile(**p) for p in raw}
+    return {p["name"]: BankProfile(**_without_comment_keys(p)) for p in raw}
 
 
 def save_bank_profiles(data_home: Path, profiles: dict[str, BankProfile]) -> None:
@@ -50,7 +55,7 @@ def save_bank_profiles(data_home: Path, profiles: dict[str, BankProfile]) -> Non
 
 def load_rules(data_home: Path) -> list[CategoryRule]:
     raw = _read_json(data_home, RULES_FILE, [])
-    return [CategoryRule(**r) for r in raw]
+    return [CategoryRule(**_without_comment_keys(r)) for r in raw]
 
 
 def save_rules(data_home: Path, rules: list[CategoryRule]) -> None:

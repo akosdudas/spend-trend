@@ -126,6 +126,9 @@ def _build_display_df(committed: list[Transaction], needs_attention_only: bool):
             continue
         rows[f"s{i}"] = _row_dict("staged", s.transaction, s.skip)
     df = pd.DataFrame.from_dict(rows, orient="index", columns=COLUMNS)
+    # A plain object column of datetime.date can segfault pyarrow's Arrow conversion in
+    # st.data_editor; force a proper datetime64 dtype instead.
+    df["date"] = pd.to_datetime(df["date"])
     return df, set(rows.keys())
 
 
