@@ -18,7 +18,7 @@ def render(data_home) -> None:
         st.info("No closed or legacy years yet.")
         return
 
-    category_groups = config_store.load_category_groups(data_home)
+    shared_map = config_store.load_category_groups(data_home)
 
     for year in sorted(years, reverse=True):
         with st.expander(str(year), expanded=False):
@@ -27,7 +27,10 @@ def render(data_home) -> None:
 
             rows = year_store.load_summary(data_home, year)
             expense_categories = {r.category for r in rows if r.type == "expense"}
-            unmapped = unmapped_categories(expense_categories, category_groups)
+            snapshot = year_store.load_year_groups_snapshot(data_home, year)
+            unmapped = unmapped_categories(
+                expense_categories, snapshot if snapshot is not None else shared_map
+            )
             if unmapped:
                 st.warning(f"Unmapped categories (fold into Rest): {', '.join(sorted(unmapped))}")
 

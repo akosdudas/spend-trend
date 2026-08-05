@@ -40,12 +40,20 @@ class Record:
 
 
 def build_records(data_home: Path) -> list[Record]:
-    """One Record per transaction (open years) or per historical-summary row (closed/legacy years)."""
-    category_groups = config_store.load_category_groups(data_home)
+    """One Record per transaction (open years) or per historical-summary row (closed/legacy years).
+
+    Grouping is resolved per year (01-domain-model.md §2.2): a year with its own groups.json
+    snapshot (a closed year) folds via that snapshot; otherwise (open, or legacy with no snapshot)
+    via the shared map.
+    """
+    shared_map = config_store.load_category_groups(data_home)
     records: list[Record] = []
 
     for year in year_store.list_years(data_home):
         state = year_store.year_state(data_home, year)
+        snapshot = year_store.load_year_groups_snapshot(data_home, year)
+        category_groups = snapshot if snapshot is not None else shared_map
+
         if state == "open":
             for t in year_store.load_transactions(data_home, year):
                 records.append(

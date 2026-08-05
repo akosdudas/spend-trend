@@ -13,7 +13,11 @@ def render(data_home) -> None:
     st.caption("Changing it is a file edit or launcher argument, not an in-app picker.")
 
     st.subheader("Close / reopen a year")
-    st.caption("Closing compiles summary.csv from transactions.csv; it is reversible by reopening.")
+    st.caption(
+        "Closing compiles summary.csv from transactions.csv and, if none exists yet, snapshots the "
+        "shared Groups map into that year's own groups.json. Reversible by reopening; groups.json is "
+        "left in place, so re-closing keeps any hand-edits to it."
+    )
 
     years = year_store.list_years(data_home)
     if not years:

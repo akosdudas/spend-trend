@@ -7,6 +7,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
+from src.analysis.groups import group_map_from_json, group_map_to_json
 from src.domain.models import BankProfile, CategoryRule
 from src.storage.io_utils import safe_write_text
 
@@ -94,21 +95,19 @@ def save_rules(data_home: Path, rules: list[CategoryRule]) -> None:
 
 
 # --- category -> group map ---------------------------------------------------
-# Stored group-first on disk (group -> [category, ...]) for easy hand-editing (01-domain-model.md
-# §2.2); kept as a flat category -> group dict in memory, since every consumer looks up by category.
+# The shared map is the current working draft for OPEN years only (01-domain-model.md §2.2);
+# closed years fold via their own data/<year>/groups.json snapshot instead (src/storage/year_store.py).
+# Stored group-first on disk (group -> [category, ...]) for easy hand-editing; kept as a flat
+# category -> group dict in memory, since every consumer looks up by category.
 
 
 def load_category_groups(data_home: Path) -> dict[str, str]:
     raw = _read_json(data_home, CATEGORY_GROUPS_FILE, {})
-    return {category: group for group, categories in raw.items() for category in categories}
+    return group_map_from_json(raw)
 
 
 def save_category_groups(data_home: Path, mapping: dict[str, str]) -> None:
-    grouped: dict[str, list[str]] = {}
-    for category, group in mapping.items():
-        grouped.setdefault(group, []).append(category)
-    ordered = {group: sorted(categories) for group, categories in sorted(grouped.items())}
-    _write_json(data_home, CATEGORY_GROUPS_FILE, ordered)
+    _write_json(data_home, CATEGORY_GROUPS_FILE, group_map_to_json(mapping))
 
 
 # --- saved views --------------------------------------------------------------

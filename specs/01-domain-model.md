@@ -41,8 +41,8 @@ seen in about the last year) and allows free typing.
 ### 2.2 Group — analytical fold-up (expense only)
 
 Groups are higher-level **expense** buckets used only for analysis, defined by a
-**`CategoryGroupMap`** (`config/category-groups.json`), stored **group-first** for easy hand-editing
-— each key is a group, its value the list of expense categories that fold into it:
+**`CategoryGroupMap`** stored **group-first** for easy hand-editing — each key is a group, its
+value the list of expense categories that fold into it:
 
 ```json
 {
@@ -55,9 +55,23 @@ Groups are higher-level **expense** buckets used only for analysis, defined by a
 - These are the headline percentage buckets for spending. **Income is not grouped** — income is
   analyzed by category (and by its `type` total), which is a short list.
 - Applied on demand when a view groups by `group`; editing the map never mutates transactions.
-- Expense categories absent from the map fold into a default group (**Rest**) and are surfaced so
-  they can be mapped.
+- Anything unmapped folds into a default group (**Rest**) and is surfaced so it can be mapped.
 - The income/expense split for ratios comes from `type`, not from this map.
+
+**The map is scoped per year** — because each year throws off a few one-off categories (a
+specific trip, a one-off purchase) that must not accumulate in one eternal file:
+
+- The shared `config/category-groups.json` is the **current working draft**, holding only
+  categories active in **open** years. Prune it freely.
+- **Closing** a year snapshots the current map to `data/<year>/groups.json` (sibling to
+  `summary.csv`), capturing how that year was grouped at the time.
+- **Fold resolution:** a **closed** year folds via its own `data/<year>/groups.json`; **open** and
+  **legacy** years (no snapshot) fold via the shared map; unmapped → Rest.
+- Regrouping a closed year is a local edit to *its* `groups.json` (1–2 lines) and reshapes only
+  that year. Reclassifying a recurring category across years means editing each year's snapshot it
+  appears in — scoped and explicit, never one silent edit that reshapes the whole timeline.
+- Snapshots are **never auto-overwritten** (see `02-storage.md`): closing preserves an existing
+  `groups.json`.
 
 ### 2.3 Transaction
 

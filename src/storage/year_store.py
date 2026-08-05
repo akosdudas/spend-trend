@@ -4,17 +4,21 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 from collections import defaultdict
 from datetime import date as Date
 from decimal import Decimal
 from pathlib import Path
 from typing import cast
 
+from src.analysis.groups import group_map_from_json, group_map_to_json
 from src.domain.models import HistoricalSummary, Transaction, Type
+from src.storage import config_store
 from src.storage.io_utils import safe_write_text
 
 TRANSACTIONS_FILE = "transactions.csv"
 SUMMARY_FILE = "summary.csv"
+GROUPS_SNAPSHOT_FILE = "groups.json"
 
 TRANSACTION_FIELDS = ["date", "amount", "currency", "type", "rawDescription", "category", "notes"]
 SUMMARY_FIELDS = ["type", "category", "currency", "amount"]
@@ -160,11 +164,32 @@ def save_summary(data_home: Path, year: int, rows: list[HistoricalSummary]) -> N
     safe_write_text(path, buf.getvalue())
 
 
+# --- groups.json: a closed year's own category -> group snapshot (01-domain-model.md §2.2) -----
+
+
+def load_year_groups_snapshot(data_home: Path, year: int) -> dict[str, str] | None:
+    """The year's own snapshot, or None if it has none (open year, or a legacy year)."""
+    path = year_dir(data_home, year) / GROUPS_SNAPSHOT_FILE
+    if not path.exists():
+        return None
+    with path.open(encoding="utf-8") as f:
+        return group_map_from_json(json.load(f))
+
+
+def snapshot_year_groups_if_absent(data_home: Path, year: int, shared_map: dict[str, str]) -> None:
+    """Freeze the shared map into this year's groups.json — a no-op if a snapshot already exists."""
+    path = year_dir(data_home, year) / GROUPS_SNAPSHOT_FILE
+    if path.exists():
+        return
+    safe_write_text(path, json.dumps(group_map_to_json(shared_map), indent=2) + "\n")
+
+
 # --- lifecycle: open -> closed -> reopen ---------------------------------------
 
 
 def close_year(data_home: Path, year: int) -> None:
-    """Compile summary.csv (annual sums by type+category+currency) from transactions.csv."""
+    """Compile summary.csv (annual sums by type+category+currency) from transactions.csv, and
+    snapshot the shared category-groups map into groups.json if this year has none yet."""
     # HistoricalSummary.amount is an unsigned annual magnitude (05-historical-data.md example),
     # unlike Transaction.amount which is signed (spend negative, income positive).
     transactions = load_transactions(data_home, year)
@@ -176,9 +201,11 @@ def close_year(data_home: Path, year: int) -> None:
         for (type_, category, currency), amount in sums.items()
     ]
     save_summary(data_home, year, rows)
+    snapshot_year_groups_if_absent(data_home, year, config_store.load_category_groups(data_home))
 
 
 def reopen_year(data_home: Path, year: int) -> None:
+    """Delete summary.csv so the year reads live again; groups.json is left in place (02-storage.md)."""
     path = year_dir(data_home, year) / SUMMARY_FILE
     if path.exists():
         path.unlink()

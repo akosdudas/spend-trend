@@ -6,8 +6,10 @@ transaction-level years. Entities in `01-domain-model.md`; storage in `02-storag
 ## 1. What it is
 
 Past data is **annual sums by type + category**, stored as `HistoricalSummary` rows. It folds up
-to groups via the same `category → group` map and feeds the same analysis as transaction data —
-only the time granularity differs (annual, no month).
+to groups and feeds the same analysis as transaction data — only the time granularity differs
+(annual, no month). Grouping is scoped per year: a **closed** year folds via its own
+`data/<year>/groups.json` snapshot; a **legacy** year (no snapshot) folds via the shared map
+(`01-domain-model.md`).
 
 ## 2. Storage
 
@@ -27,8 +29,10 @@ income,salary,EUR,110000
 - Hand-written, one `summary.csv` per year; this is the source of truth for that year. No
  bulk-import format.
 
-On load: categories absent from the group map fold into the default group and are surfaced;
-non-numeric cells are reported and skipped.
+On load: categories not covered by the year's grouping (its own snapshot, or the shared map for a
+legacy year) fold into the default group and are surfaced; non-numeric cells are reported and
+skipped. Regrouping a closed year is a local edit to its `data/<year>/groups.json` and affects
+only that year.
 
 ## 3. Coexistence with transaction years
 

@@ -8,9 +8,10 @@ in-memory rows (no SQL).
 Creating a visualization takes no code or config editing: the user makes four choices with
 on-screen controls and the result redraws instantly; **Save as view** is a button.
 
-1. **Group-by** — one or more of: `type`, `category`, `group` (derived via the map, `01`),
- merchant (normalized description), month, year, currency. Two dimensions form a grid (e.g.
- group × month).
+1. **Group-by** — one or more of: `type`, `category`, `group`, merchant (normalized description),
+ month, year, currency. Two dimensions form a grid (e.g. group × month). `group` is derived
+ **per year**: a closed year folds via its own `groups.json` snapshot, open/legacy years via the
+ shared map (`01`, `02`).
 2. **Measure** — **sum of amount** (v1), or a ratio measure. (Count/average are possible
  later.)
 3. **Filters** — year(s)/date range, `type`, `category`, `group`, merchant, currency, amount
@@ -28,7 +29,7 @@ question — there is no chart-click drill-down.
 
 A saved view is a small JSON entry in `saved-views.json`: `name`, `width`
 (`quarter`/`half`/`full`), `chart` (`table`/`bar`/`stacked_bar`/`line`/`pie`), `groupBy` (a list
-of dimensions), `measure` (`sum` or a ratio from §5.1), and `filters` (year/type/currency/… — a
+of dimensions), `measure` (`sum` or one of the ratio measures), and `filters` (year/type/currency/… — a
 `year` of `"current"` means the open year).
 
 The dashboard renders saved views **in list order** in a flow grid: each at its width,

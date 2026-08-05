@@ -1,22 +1,35 @@
-"""Manage the expense category -> group map. See specs/07-ux.md §2.6, specs/01-domain-model.md §2.2."""
+"""Manage the shared expense category -> group map. See specs/07-ux.md §2.6, specs/01-domain-model.md §2.2."""
 
 from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
 
-from src.analysis.aggregate import build_records
 from src.analysis.groups import unmapped_categories
-from src.storage import config_store
+from src.storage import config_store, year_store
+
+
+def _open_year_expense_categories(data_home) -> set[str]:
+    """Categories actually in scope for the shared draft map — open years only."""
+    categories: set[str] = set()
+    for year in year_store.list_years(data_home):
+        if year_store.year_state(data_home, year) != "open":
+            continue
+        for t in year_store.load_transactions(data_home, year):
+            if t.type == "expense" and t.category:
+                categories.add(t.category)
+    return categories
 
 
 def render(data_home) -> None:
     st.header("Groups")
-    st.caption("Editing this map never touches transactions — it only affects analysis fold-up.")
+    st.caption(
+        "The current working draft for open years — prune it freely. A closed year keeps its own "
+        "groups.json snapshot instead (Settings). Editing this map never touches transactions."
+    )
 
     mapping = config_store.load_category_groups(data_home)
-    records = build_records(data_home)
-    expense_categories = sorted({r.category for r in records if r.type == "expense" and r.category})
+    expense_categories = sorted(_open_year_expense_categories(data_home))
 
     unmapped = unmapped_categories(set(expense_categories), mapping)
     if unmapped:

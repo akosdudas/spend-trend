@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from src.domain.models import Transaction, Type
-from src.storage import year_store
+from src.storage import config_store, year_store
 
 
 def _tx(
@@ -94,3 +94,54 @@ def test_load_summary_skips_non_numeric_amount_rows(tmp_path):
 
     assert len(rows) == 1
     assert rows[0].category == "housing"
+
+
+# --- groups.json: a closed year's own snapshot (01-domain-model.md §2.2, 02-storage.md §4) ---
+
+
+def test_load_year_groups_snapshot_missing_file_returns_none(tmp_path):
+    assert year_store.load_year_groups_snapshot(tmp_path, 2026) is None
+
+
+def test_snapshot_year_groups_writes_when_absent(tmp_path):
+    year_store.snapshot_year_groups_if_absent(tmp_path, 2026, {"groceries": "Food"})
+
+    assert year_store.load_year_groups_snapshot(tmp_path, 2026) == {"groceries": "Food"}
+
+
+def test_snapshot_year_groups_never_overwrites_existing_snapshot(tmp_path):
+    year_store.snapshot_year_groups_if_absent(tmp_path, 2026, {"groceries": "Food"})
+    year_store.snapshot_year_groups_if_absent(tmp_path, 2026, {"groceries": "Shopping", "rent": "Housing"})
+
+    # the second call must not overwrite — the first snapshot wins
+    assert year_store.load_year_groups_snapshot(tmp_path, 2026) == {"groceries": "Food"}
+
+
+def test_close_year_snapshots_shared_map_when_no_snapshot_exists(tmp_path):
+    config_store.save_category_groups(tmp_path, {"groceries": "Food"})
+    year_store.save_transactions(tmp_path, 2026, [_tx("2026-01-01", "-1", category="groceries")])
+
+    year_store.close_year(tmp_path, 2026)
+
+    assert year_store.load_year_groups_snapshot(tmp_path, 2026) == {"groceries": "Food"}
+
+
+def test_close_year_does_not_overwrite_a_hand_edited_snapshot(tmp_path):
+    config_store.save_category_groups(tmp_path, {"groceries": "Food"})
+    year_store.save_transactions(tmp_path, 2026, [_tx("2026-01-01", "-1", category="groceries")])
+    year_store.snapshot_year_groups_if_absent(tmp_path, 2026, {"groceries": "Custom"})
+
+    year_store.close_year(tmp_path, 2026)
+
+    assert year_store.load_year_groups_snapshot(tmp_path, 2026) == {"groceries": "Custom"}
+
+
+def test_reopen_year_leaves_groups_snapshot_in_place(tmp_path):
+    config_store.save_category_groups(tmp_path, {"groceries": "Food"})
+    year_store.save_transactions(tmp_path, 2026, [_tx("2026-01-01", "-1", category="groceries")])
+    year_store.close_year(tmp_path, 2026)  # snapshots {"groceries": "Food"} since none exists yet
+
+    year_store.reopen_year(tmp_path, 2026)
+
+    assert year_store.year_state(tmp_path, 2026) == "open"
+    assert year_store.load_year_groups_snapshot(tmp_path, 2026) == {"groceries": "Food"}
